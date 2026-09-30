@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomeFeast – Homemade Tiffin & Food Service Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .tab-active { color: #d97706; border-bottom: 2px solid #d97706; }
+    .tab-inactive { color: #78716c; border-bottom: 2px solid transparent; }
+  </style>
+</head>
+<body class="bg-stone-50 text-stone-900 antialiased min-h-screen pb-16">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-5 right-5 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-stone-800 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toastMsg" class="text-sm font-medium">Notification message</span>
+  </div>
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchRole('customer'); switchCustomerTab('explore')">
+        <div class="w-10 h-10 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-600/30">
+          <i data-lucide="utensils" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight text-stone-900">Home<span class="text-amber-600">Feast</span></span>
+          <span class="hidden sm:inline-block ml-2 text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded-full">Tiffin Service</span>
+        </div>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="flex items-center bg-stone-100 p-1 rounded-2xl text-xs font-semibold text-stone-600">
+        <button id="btnRoleCustomer" onclick="switchRole('customer')" class="px-3.5 py-1.5 rounded-xl bg-white text-stone-900 shadow-sm transition">Customer</button>
+        <button id="btnRoleProvider" onclick="switchRole('provider')" class="px-3.5 py-1.5 rounded-xl text-stone-600 hover:text-stone-900 transition">Kitchen Hub</button>
+        <button id="btnRoleAdmin" onclick="switchRole('admin')" class="px-3.5 py-1.5 rounded-xl text-stone-600 hover:text-stone-900 transition">Admin HQ</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CUSTOMER VIEW -->
+  <main id="viewCustomer" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 block">
+    <div class="flex gap-6 border-b border-stone-200 mb-6">
+      <button id="tabExplore" onclick="switchCustomerTab('explore')" class="pb-3 font-semibold text-sm transition tab-active">
+        Explore Tiffin Kitchens (<span id="totalKitchensCount">38</span>)
+      </button>
+      <button id="tabSubscriptions" onclick="switchCustomerTab('subscriptions')" class="pb-3 font-semibold text-sm transition tab-inactive flex items-center gap-1.5">
+        My Subscriptions <span id="subCountBadge" class="bg-amber-100 text-amber-800 text-[11px] px-2 py-0.2 rounded-full font-bold">1</span>
+      </button>
+    </div>
+
+    <!-- Explore -->
+    <div id="customerTabExplore" class="block">
+      <!-- Banner -->
+      <div class="bg-gradient-to-br from-amber-600 via-amber-700 to-orange-600 rounded-3xl p-6 sm:p-10 text-white mb-8 shadow-xl shadow-amber-600/10">
+        <span class="bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+          Homely & Hygienic Daily Meals
+        </span>
+        <h1 class="text-2xl sm:text-4xl font-extrabold mt-3 leading-tight">
+          Freshly cooked daily meals delivered directly to your door.
+        </h1>
+        <p class="mt-2 text-amber-100 text-sm sm:text-base max-w-xl">
+          Say goodbye to greasy restaurant food. Subscribe to verified mother-led kitchens across your locality with rotating menus.
+        </p>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="flex flex-col md:flex-row gap-3 mb-8">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"></i>
+          <input
+            id="searchInput"
+            oninput="handleSearch(this.value)"
+            type="text"
+            placeholder="Search kitchens, cuisine, dishes, or locality (e.g. Jadavpur, Salt Lake, New Town, Jain)..."
+            class="w-full pl-11 pr-4 py-3 bg-white border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm"
+          />
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="filterContainer">
+          <button onclick="setFilter('All')" class="filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-amber-600 text-white shadow-sm" data-filter="All">All</button>
+          <button onclick="setFilter('Pure Veg')" class="filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-white border border-stone-200 text-stone-700 hover:bg-stone-50" data-filter="Pure Veg">Pure Veg</button>
+          <button onclick="setFilter('Non-Veg')" class="filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-white border border-stone-200 text-stone-700 hover:bg-stone-50" data-filter="Non-Veg">Non-Veg</button>
+          <button onclick="setFilter('Jain Available')" class="filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-white border border-stone-200 text-stone-700 hover:bg-stone-50" data-filter="Jain Available">Jain Available</button>
+        </div>
+      </div>
+
+      <!-- Cook Cards Grid -->
+      <div id="cookCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Subscriptions Tab -->
+    <div id="customerTabSubscriptions" class="hidden">
+      <div id="subscriptionsContainer" class="space-y-4 max-w-2xl"></div>
+    </div>
+  </main>
+
+  <!-- KITCHEN PROVIDER HUB -->
+  <main id="viewProvider" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 hidden">
+    <div class="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 mb-8 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-stone-900">Aarti's Kitchen – Provider Hub</h2>
+          <p class="text-xs text-stone-500 mt-0.5">Salt Lake, Sector V • FSSAI License: #22823012000451</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-3 py-1.5 rounded-xl w-fit">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Kitchen Live & Receiving Orders
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+          <span class="text-xs text-stone-500 font-medium">Today's Lunch Thalis</span>
+          <p class="text-2xl font-black text-stone-900 mt-1">28</p>
+        </div>
+        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+          <span class="text-xs text-stone-500 font-medium">Rotis to Roll</span>
+          <p class="text-2xl font-black text-amber-600 mt-1">112</p>
+        </div>
+        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+          <span class="text-xs text-stone-500 font-medium">Active Subscribers</span>
+          <p class="text-2xl font-black text-stone-900 mt-1">34</p>
+        </div>
+        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+          <span class="text-xs text-stone-500 font-medium">September Payout</span>
+          <p class="text-2xl font-black text-emerald-600 mt-1">₹42,800</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <h3 class="text-base font-bold text-stone-900 mb-4">Pending Subscription Requests</h3>
+      <div id="cookRequestsList" class="space-y-3"></div>
+    </div>
+  </main>
+
+  <!-- ADMIN HQ -->
+  <main id="viewAdmin" class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 hidden">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <span class="text-xs text-stone-400 uppercase font-bold tracking-wider">Platform Monthly GMV</span>
+        <p class="text-3xl font-black text-stone-900 mt-2">₹4,82,400</p>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <span class="text-xs text-stone-400 uppercase font-bold tracking-wider">Verified Kitchens</span>
+        <p class="text-3xl font-black text-amber-600 mt-2">38</p>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <span class="text-xs text-stone-400 uppercase font-bold tracking-wider">Retention Rate</span>
+        <p class="text-3xl font-black text-emerald-600 mt-2">87.4%</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-sm">
+      <h3 class="font-bold text-stone-900 text-base mb-4">Kitchen FSSAI Audit Queue</h3>
+      <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h4 class="font-bold text-sm text-stone-900">Radha's Rasoi (Howrah)</h4>
+          <p class="text-xs text-stone-600 mt-0.5">Submitted FSSAI #22826001009941 • Kitchen Inspection: Passed (4/4)</p>
+        </div>
+        <button onclick="showToast('Cook verified and published live to search!')" class="bg-stone-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-stone-800 transition">
+          Approve & Launch
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div id="cookModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative shadow-2xl">
+      <button onclick="closeModal()" class="absolute top-5 right-5 p-2 bg-stone-100 hover:bg-stone-200 rounded-full text-stone-600 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <h2 id="modalCookName" class="text-2xl font-black text-stone-900"></h2>
+      <p id="modalCookMeta" class="text-xs text-stone-500 mt-1"></p>
+
+      <!-- Weekly Schedule -->
+      <div class="mt-6 border-t border-stone-100 pt-4">
+        <h3 class="font-bold text-sm text-stone-900 mb-3 flex items-center gap-1.5">
+          <i data-lucide="calendar" class="w-4 h-4 text-amber-600"></i> Rotating Weekly Menu
+        </h3>
+        <div id="modalMenuSchedule" class="space-y-2.5"></div>
+      </div>
+
+      <!-- Choose Duration -->
+      <div class="mt-6 border-t border-stone-100 pt-4">
+        <h3 class="font-bold text-sm text-stone-900 mb-3">Select Subscription Plan</h3>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <button onclick="setModalDuration('daily')" id="btnPlanDaily" class="p-3 rounded-2xl border text-center border-stone-200 text-stone-700">
+            <div class="text-xs font-bold">1 Day Trial</div>
+          </button>
+          <button onclick="setModalDuration('weekly')" id="btnPlanWeekly" class="p-3 rounded-2xl border text-center border-stone-200 text-stone-700">
+            <div class="text-xs font-bold">7 Days</div>
+            <div class="text-[10px] text-emerald-600 font-semibold">5% OFF</div>
+          </button>
+          <button onclick="setModalDuration('monthly')" id="btnPlanMonthly" class="p-3 rounded-2xl border text-center border-amber-600 bg-amber-50 text-amber-900 font-bold">
+            <div class="text-xs font-bold">28 Days</div>
+            <div class="text-[10px] text-emerald-600 font-semibold">10% OFF</div>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="setModalMealType('lunch')" id="btnMealLunch" class="p-2.5 rounded-xl border border-stone-200 text-stone-700 text-xs text-center font-medium">Lunch Only</button>
+          <button onclick="setModalMealType('dinner')" id="btnMealDinner" class="p-2.5 rounded-xl border border-stone-200 text-stone-700 text-xs text-center font-medium">Dinner Only</button>
+          <button onclick="setModalMealType('both')" id="btnMealBoth" class="p-2.5 rounded-xl border border-stone-900 bg-stone-900 text-white text-xs text-center font-semibold">Both Meals</button>
+        </div>
+      </div>
+
+      <!-- Price & Subscribe -->
+      <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
+        <div>
+          <span class="text-xs text-stone-400 block font-medium">Calculated Total</span>
+          <p id="modalTotalPrice" class="text-2xl font-black text-stone-900">₹0</p>
+        </div>
+        <button onclick="confirmSubscription()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-6 py-3.5 rounded-2xl transition shadow-md shadow-amber-600/20">
+          Confirm Subscription
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cooks = [
+      {
+        id: 1,
+        name: "Aarti's Kitchen",
+        chef: "Aarti Sharma",
+        location: "Salt Lake, Sector V",
+        rating: 4.9,
+        reviewsCount: 142,
+        cuisine: "North Indian & Punjabi",
+        type: "Pure Veg",
+        fssai: "22823012000451",
+        pricePerMeal: 110,
+        tags: ["Homely", "Less Oil", "Desi Ghee Phulkas"],
+        description: "Mother of two cooking authentic, digestive North Indian thalis with daily rotating fresh seasonal vegetables.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Dal Tadka, Aloo Gobhi, 4 Phulkas, Jeera Rice, Salad", dinner: "Paneer Bhurji, Mix Dal, 4 Tawa Roti, Kheer" },
+          Tuesday: { lunch: "Rajma Masala, Steamed Basmati Rice, Boondi Raita, Salad", dinner: "Bhindi Masala, Yellow Moong Dal, 4 Phulkas" },
+          Wednesday: { lunch: "Kadhi Pakoda, Methi Aloo, Steamed Rice, Papad", dinner: "Matar Paneer, Chana Dal, 4 Phulkas, Salad" }
+        }
+      },
+      {
+        id: 2,
+        name: "Maa er Henshel",
+        chef: "Basanti Mukherjee",
+        location: "New Town, Action Area 1",
+        rating: 4.85,
+        reviewsCount: 98,
+        cuisine: "Bengali Traditional",
+        type: "Non-Veg",
+        fssai: "22822005001198",
+        pricePerMeal: 130,
+        tags: ["Authentic Bengali", "Mustard Fish", "Posto"],
+        description: "Authentic Bengali home-cooked meals prepared with mustard oil and traditional panch phoron.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Macher Jhol (Rahu), Shobji Dal, Aloo Bhaja", dinner: "4 Roti, Dim Kosha (Egg Curry), Musur Dal" },
+          Tuesday: { lunch: "Bhaat, Doi Katla, Jhinge Aloo Posto, Tok Dal", dinner: "4 Roti, Chanar Dalna, Moong Dal, Chutney" }
+        }
+      },
+      {
+        id: 3,
+        name: "Swad Kathiyawadi",
+        chef: "Bhavna Ben Patel",
+        location: "Kankurgachi",
+        rating: 4.78,
+        reviewsCount: 76,
+        cuisine: "Gujarati & Jain",
+        type: "Jain Available",
+        fssai: "22824009000832",
+        pricePerMeal: 95,
+        tags: ["No Onion No Garlic", "Mild Spiced", "Soft Rotlis"],
+        description: "Pure vegetarian and Jain everyday thalis with soft phulkas, mild dals, and light khichdi.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Sev Tameta Nu Shaak, Gujarati Dal, 5 Rotli, Rice", dinner: "Vaghireli Khichdi, Gujarati Kadhi, Papad" },
+          Tuesday: { lunch: "Ringan No Olo, Bajra Rotla, Ghor (Jaggery), Chaas", dinner: "Moong Dal Chilka, 5 Phulka Rotli, Bhindi Sambhariya" }
+        }
+      },
+      {
+        id: 4,
+        name: "Annapurna Rasoi",
+        chef: "Sunita Agarwal",
+        location: "Ballygunge, Kolkata",
+        rating: 4.92,
+        reviewsCount: 164,
+        cuisine: "Marwari & Rajasthani",
+        type: "Pure Veg",
+        fssai: "22824011000912",
+        pricePerMeal: 120,
+        tags: ["Pure Ghee", "Gatta Curry", "Homely Spices"],
+        description: "Traditional Marwari home meals prepared in pure cow ghee without excess spice or soda.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Dal Baati Churma, Gatta Curry, Chaas", dinner: "Sev Tamatar, 4 Phulkas, Moong Dal Khichdi" },
+          Tuesday: { lunch: "Panchmel Dal, Aloo Shimla Mirch, 4 Phulkas, Jeera Rice", dinner: "Kadhi Pakoda, 4 Methi Poori, Papad" }
+        }
+      },
+      {
+        id: 5,
+        name: "Amma's Sambar Pot",
+        chef: "Lakshmi Narayanan",
+        location: "Jadavpur, Kolkata",
+        rating: 4.88,
+        reviewsCount: 112,
+        cuisine: "South Indian Homestyle",
+        type: "Pure Veg",
+        fssai: "22823008001742",
+        pricePerMeal: 100,
+        tags: ["Filter Coffee", "Drumstick Sambar", "Curd Rice"],
+        description: "Authentic Tamilian home lunch and dinner packs with fresh roasted spice sambar and rasam.",
+        image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Steamed Rice, Drumstick Sambar, Beans Poriyal, Rasam, Curd", dinner: "4 Soft Idlis, Medu Vada, Coconut Chutney, Sambar" },
+          Tuesday: { lunch: "Lemon Rice, Potato Roast, Tomato Rasam, Papad, Curd", dinner: "3 Homestyle Uttapams with Tomato & Coriander Chutney" }
+        }
+      },
+      {
+        id: 6,
+        name: "Dada's Tiffin Corner",
+        chef: "Subrata Sen",
+        location: "Dum Dum, Cantonment",
+        rating: 4.72,
+        reviewsCount: 84,
+        cuisine: "Bengali & Office Lunch",
+        type: "Non-Veg",
+        fssai: "22825001002340",
+        pricePerMeal: 115,
+        tags: ["Pocket Friendly", "Egg Curry", "Fish Thali"],
+        description: "Budget-friendly daily tiffin subscription tailored specially for college students and working professionals.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Rice, Masoor Dal, Aloo Seddho, Dim Bhuna (Egg)", dinner: "4 Roti, Tadka Dal, Onion Salad" },
+          Tuesday: { lunch: "Rice, Macher Jhol, Kumro Chokka, Dal", dinner: "4 Roti, Soyabean Curry, Dal" }
+        }
+      },
+      {
+        id: 7,
+        name: "Satvik Bhojan",
+        chef: "Pramila Daga",
+        location: "Howrah, Shibpur",
+        rating: 4.81,
+        reviewsCount: 65,
+        cuisine: "Pure Satvik & Jain",
+        type: "Jain Available",
+        fssai: "22826002008811",
+        pricePerMeal: 105,
+        tags: ["Strictly Jain", "No Root Vegetables", "Rock Salt"],
+        description: "Zero garlic, onion, potato, or root veggies. Cooked cleanly strictly abiding by satvik dietary guidelines.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Lauki Tamatar Curry, Moong Dal, 4 Phulkas, Rice", dinner: "Khichdi with Desi Ghee, Gujarati Kadhi, Papad" },
+          Tuesday: { lunch: "Karela Fry (mild), Arhar Dal, 4 Phulkas, Rice", dinner: "Doodhi Halwa, 4 Phulkas, Tuar Dal Fry" }
+        }
+      },
+      {
+        id: 8,
+        name: "Ruchira's Kitchen",
+        chef: "Ruchira Chatterjee",
+        location: "Gariahat, South Kolkata",
+        rating: 4.95,
+        reviewsCount: 189,
+        cuisine: "Continental & Healthy Bowls",
+        type: "Non-Veg",
+        fssai: "22824003009102",
+        pricePerMeal: 150,
+        tags: ["High Protein", "Salads", "Grilled Chicken"],
+        description: "Balanced, portion-controlled meals designed for fitness enthusiasts. High protein, calculated carbs, and zero refined oil.",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Herb Grilled Chicken Breast, Brown Rice, Steamed Veggies", dinner: "Grilled Paneer/Chicken Salad with Olive Oil Dressing" },
+          Tuesday: { lunch: "Fish Piccata (Bhetki), Quinoa Pilaf, Sautéed Beans", dinner: "Boiled Egg Salad Bowl with Chickpeas and Lime Vinaigrette" }
+        }
+      },
+      {
+        id: 9,
+        name: "Shyam's North Indian Zaika",
+        chef: "Shyam Sundar Saini",
+        location: "Salt Lake, Sector I",
+        rating: 4.82,
+        reviewsCount: 114,
+        cuisine: "North Indian Homestyle",
+        type: "Non-Veg",
+        fssai: "22824011002231",
+        pricePerMeal: 125,
+        tags: ["Tandoori Roti", "Desi Murgh", "Light Spiced"],
+        description: "Low-oil North Indian home curries cooked with whole spices, daily warm phulkas, and slow-simmered dals.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Chicken Tariwala, Steamed Basmati Rice, 3 Phulkas, Onion Salad", dinner: "Mix Veg Curry, Tadka Dal, 4 Tawa Roti, Papad" },
+          Tuesday: { lunch: "Rajma Masala, Steamed Rice, Cucumber Raita, 2 Tawa Parathas", dinner: "Egg Bhurji Curry, Yellow Moong Dal, 4 Phulkas" }
+        }
+      },
+      {
+        id: 10,
+        name: "Nani Ka Rasoi",
+        chef: "Pushpa Devi Gupta",
+        location: "Burrabazar, Central Kolkata",
+        rating: 4.91,
+        reviewsCount: 220,
+        cuisine: "Traditional Bihari & UP Style",
+        type: "Pure Veg",
+        fssai: "22822002005432",
+        pricePerMeal: 90,
+        tags: ["Sattu Dishes", "Mustard Aloo Gobhi", "Desi Ghee"],
+        description: "Simple, highly digestible rustic meals cooked by grandmother Pushpa featuring sattu parathas and dal chokha.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bihari Aloo Gobhi Bhujia, Dal Rahar, 4 Ghee Phulkas, Chawal", dinner: "2 Sattu Paratha, Baingan Chokha, Tomato Chutney" },
+          Tuesday: { lunch: "Kadhi Bari, Steamed Rice, Aloo Chokha, Papad", dinner: "Parwal Bhujia, Masoor Dal, 4 Phulkas" }
+        }
+      },
+      {
+        id: 11,
+        name: "Shorshe Baata Tiffin",
+        chef: "Tanushree Paul",
+        location: "Baranagar, North Kolkata",
+        rating: 4.79,
+        reviewsCount: 88,
+        cuisine: "Ghoti-Bangal Fusion",
+        type: "Non-Veg",
+        fssai: "22825008003112",
+        pricePerMeal: 135,
+        tags: ["Shorshe Fish", "Aloo Posto", "Bengali Meals"],
+        description: "Everyday authentic North Kolkata Bengali meals with mild shorshe baata, seasonal shak, and light macher jhol.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Tilapia Macher Jhol, Kolmi Shak Bhaja, Musur Dal", dinner: "4 Roti, Dim Kosha (2 Eggs), Salad" },
+          Tuesday: { lunch: "Bhaat, Shorshe Pabda, Cholar Dal Coconut, Beguni", dinner: "4 Roti, Chanar Dalna, Moong Dal" }
+        }
+      },
+      {
+        id: 12,
+        name: "Pawanputra Jain Rasoi",
+        chef: "Manju Sethia",
+        location: "Bangur Avenue",
+        rating: 4.86,
+        reviewsCount: 94,
+        cuisine: "Strict Jain Satvik",
+        type: "Jain Available",
+        fssai: "22824005009841",
+        pricePerMeal: 100,
+        tags: ["No Potato", "Zero Garlic/Onion", "Moong Dal"],
+        description: "Strictly prepared under Agam principles with fresh rock salt, boiled spices, and wholesome satvik lentils.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Lauki Moong Dal, 5 Ghee Phulkas, Steamed Rice, Chaas", dinner: "Vaghireli Moong Khichdi, Jain Kadhi, Papad" },
+          Tuesday: { lunch: "Gatte Ki Sabzi (Jain), 5 Soft Rotis, Rice, Papad", dinner: "Toor Dal Fry, 5 Phulkas, Bhindi Masala" }
+        }
+      },
+      {
+        id: 13,
+        name: "Konaseema Kitchen",
+        chef: "Padma Venkatachalam",
+        location: "Lake Gardens, South Kolkata",
+        rating: 4.93,
+        reviewsCount: 156,
+        cuisine: "Andhra & Rayalaseema Homestyle",
+        type: "Pure Veg",
+        fssai: "22823004001923",
+        pricePerMeal: 110,
+        tags: ["Gongura Pachadi", "Pappu", "Tomato Rasam"],
+        description: "Authentic Andhra home meals with gun powder, gongura thogayal, mudda pappu, and traditional rasam bowls.",
+        image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Steamed Rice, Tomato Pappu, Gongura Pachadi, Ghee, Rasam", dinner: "4 Chapathis, Potato Senagapappu Kura, Curd Rice" },
+          Tuesday: { lunch: "Rice, Palakura Pappu (Spinach Dal), Bendakaya Vepudu, Charu", dinner: "Upma, Palli Chutney, Sambar" }
+        }
+      },
+      {
+        id: 14,
+        name: "The Healthy Pot",
+        chef: "Ananya Sengupta",
+        location: "Kasba, Ruby Connector",
+        rating: 4.88,
+        reviewsCount: 130,
+        cuisine: "Calorie-Counted Fitness Diet",
+        type: "Non-Veg",
+        fssai: "22825002008441",
+        pricePerMeal: 160,
+        tags: ["High Protein", "Brown Rice", "Steam Grilled"],
+        description: "Every meal macro-calculated with 30g+ protein, low glycemic carbs, zero palm oil, and fresh tossed salad greens.",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "150g Grilled Herb Chicken, Brown Rice Pilaf, Steamed Broccoli", dinner: "Boiled Egg White Bowl (4 Eggs), Multigrain Flatbread" },
+          Tuesday: { lunch: "Pan Seared Bhetki Fish, Quinoa Salad, Lemon Vinaigrette", dinner: "Grilled Tofu / Chicken Skewers, Roasted Zucchini, Clear Soup" }
+        }
+      },
+      {
+        id: 15,
+        name: "Punjabi Rasoi By Harpreet",
+        chef: "Harpreet Kaur",
+        location: "Chinar Park, Rajarhat",
+        rating: 4.77,
+        reviewsCount: 92,
+        cuisine: "Authentic Amritsari Punjabi",
+        type: "Pure Veg",
+        fssai: "22823009001452",
+        pricePerMeal: 115,
+        tags: ["Desi Ghee", "Rajma Chawal", "Amritsari Dal"],
+        description: "Classic Amritsari flavours featuring thick creamy rajma, slow-boiled black dal, and flaky whole wheat parathas.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Amritsari Chole, 2 Kulcha Parathas, Jeera Pulao, Boondi Raita", dinner: "Aloo Matar Tariwala, Yellow Moong Dal, 4 Phulkas" },
+          Tuesday: { lunch: "Rajma Masala (Jammu Style), Steamed Basmati Rice, Onion Lacha", dinner: "Bhindi Do Pyaza, Arhar Dal, 4 Phulkas" }
+        }
+      },
+      {
+        id: 16,
+        name: "Annapurna Shuddh Bhojanalay",
+        chef: "Saroj Baid",
+        location: "Alipore, Kolkata",
+        rating: 4.94,
+        reviewsCount: 175,
+        cuisine: "Marwari Satvik",
+        type: "Jain Available",
+        fssai: "22824003004521",
+        pricePerMeal: 130,
+        tags: ["Pure Cow Ghee", "No Garlic", "Organic Dal"],
+        description: "Clean homestyle Jain thalis prepared using cold-pressed oils, pure cow ghee, and hand-ground spice mixes.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Gatta Curry, Moong Mogar Dal, 4 Ghee Phulkas, Rice, Papad", dinner: "Sev Tamatar (Jain), 4 Phulkas, Chaas, Pickle" },
+          Tuesday: { lunch: "Panchmel Dal, Aloo Shimla Mirch (Jain substitute), 4 Phulkas, Rice", dinner: "Vaghireli Khichdi, Gujarati Kadhi, Papad" }
+        }
+      },
+      {
+        id: 17,
+        name: "Roshui Ghor",
+        chef: "Manju Ganguly",
+        location: "Behala Chowrasta",
+        rating: 4.81,
+        reviewsCount: 103,
+        cuisine: "Classic South Kolkata Bengali",
+        type: "Non-Veg",
+        fssai: "22822007008129",
+        pricePerMeal: 120,
+        tags: ["Panch Phoron", "Katla Kalia", "Home Dal"],
+        description: "Affordable everyday South Kolkata Bengali home tiffins with seasonal greens, lentils, and authentic fish curries.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Katla Macher Kalia, Musur Dal, Aloo Bhaja", dinner: "4 Roti, Dim Kosha, Salad" },
+          Tuesday: { lunch: "Bhaat, Rui Macher Jhol, Bandhakopi Ghonto, Moong Dal", dinner: "4 Roti, Chanar Dalna, Musur Dal" }
+        }
+      },
+      {
+        id: 18,
+        name: "Sowcarpet Tiffin Centre",
+        chef: "M. Soundararajan",
+        location: "Park Circus",
+        rating: 4.87,
+        reviewsCount: 139,
+        cuisine: "Traditional Tamilian",
+        type: "Pure Veg",
+        fssai: "22825001004901",
+        pricePerMeal: 105,
+        tags: ["Authentic Sambar", "Kootu", "Pepper Rasam"],
+        description: "Tamil Brahmin style vegetarian meals with zero onion/garlic options, homemade podi, and fresh ground rasam.",
+        image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Steamed Ponni Rice, Murungakkai Sambar, Chow Chow Kootu, Rasam", dinner: "3 Idli, 1 Medu Vada, Coconut Chutney, Sambar" },
+          Tuesday: { lunch: "Curd Rice with Pomegranate, Potato Roast, Mor Kuzhambu, Papad", dinner: "3 Homestyle Dosas with Tomato Onion Chutney" }
+        }
+      },
+      {
+        id: 19,
+        name: "Odisha Swad Tiffin",
+        chef: "Bikash Mahapatra",
+        location: "Kestopur, VIP Road",
+        rating: 4.74,
+        reviewsCount: 78,
+        cuisine: "Odia Homestyle",
+        type: "Non-Veg",
+        fssai: "22824006001872",
+        pricePerMeal: 110,
+        tags: ["Dalma", "Badi Chura", "Macha Besara"],
+        description: "Authentic Odia cuisine cooked in home kitchens: aromatic Dalma with roasted cumin and light mustard fish curries.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Steamed Rice, Odia Dalma (Veggies & Dal), Badi Chura, Salad", dinner: "4 Roti, Santula (Boiled Veg Medley), Moong Dal" },
+          Tuesday: { lunch: "Steamed Rice, Macha Besara (Mustard Fish), Saga Bhaja, Dal", dinner: "4 Roti, Egg Tarkari, Cucumber Salad" }
+        }
+      },
+      {
+        id: 20,
+        name: "Ghar Ka Dabba By Rekha",
+        chef: "Rekha Sharma",
+        location: "Tollygunge, Netaji Nagar",
+        rating: 4.89,
+        reviewsCount: 168,
+        cuisine: "Delhi & Punjabi Homestyle",
+        type: "Pure Veg",
+        fssai: "22823002008712",
+        pricePerMeal: 105,
+        tags: ["Homely Taste", "Ghee Phulkas", "Dal Makhani"],
+        description: "Hearty North Indian meals for office executives and PG students: soft rotis, aromatic pulao, and seasonal gravies.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Rajma Masala, Steamed Rice, 3 Phulkas, Boondi Raita", dinner: "Aloo Gobhi, Yellow Dal Tadka, 4 Phulkas" },
+          Tuesday: { lunch: "Chole Masala, Jeera Rice, 2 Tawa Parathas, Pickle", dinner: "Paneer Do Pyaza, Arhar Dal, 4 Phulkas" }
+        }
+      },
+      {
+        id: 21,
+        name: "Kathiyawadi Thali Express",
+        chef: "Hasmukh Bhai",
+        location: "Bhowanipore",
+        rating: 4.83,
+        reviewsCount: 119,
+        cuisine: "Kathiyawadi Gujarati",
+        type: "Pure Veg",
+        fssai: "22825004003290",
+        pricePerMeal: 115,
+        tags: ["Bajra Rotla", "Ringan Olo", "Garlic Chutney"],
+        description: "Robust Saurashtra flavours with clay-baked rotlas, spiced roasted brinjals, and wholesome kathiyawadi dals.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Sev Tameta Nu Shaak, 5 Soft Rotlis, Gujarati Dal, Rice", dinner: "Ringan No Olo, 2 Bajra Rotla, Ghor (Jaggery), Chaas" },
+          Tuesday: { lunch: "Bateta Nu Shaak, Gujarati Kadhi, Steamed Rice, 5 Rotlis", dinner: "Vaghireli Khichdi, Kadhi, Papad, Athana" }
+        }
+      },
+      {
+        id: 22,
+        name: "Meera's Pure Veg Kitchen",
+        chef: "Meera Agarwal",
+        location: "Girish Park, Central Kolkata",
+        rating: 4.90,
+        reviewsCount: 145,
+        cuisine: "Marwari Homestyle",
+        type: "Jain Available",
+        fssai: "22822003001891",
+        pricePerMeal: 110,
+        tags: ["Jain Friendly", "Desi Ghee", "Fresh Phulkas"],
+        description: "Delicious home-style Marwari food with zero artificial colors or restaurant thickening pastes.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Panchmel Dal, 4 Phulkas, Gatta Curry, Steamed Rice", dinner: "Sev Tamatar, 4 Phulkas, Moong Dal Khichdi" },
+          Tuesday: { lunch: "Chana Dal Tadka, Aloo Shimla Mirch, 4 Phulkas, Rice", dinner: "Kadhi Pakoda, 4 Methi Parathas, Papad" }
+        }
+      },
+      {
+        id: 23,
+        name: "Fisherman's Wharf Tiffin",
+        chef: "Sandhya Roy",
+        location: "Baguiati, VIP Road",
+        rating: 4.86,
+        reviewsCount: 110,
+        cuisine: "Authentic East Bengal (Bangal)",
+        type: "Non-Veg",
+        fssai: "22824008006124",
+        pricePerMeal: 140,
+        tags: ["Ilish / Pabda", "Spicy Macher Jhol", "Mustard Oil"],
+        description: "Specialized in fragrant Bangal recipes featuring aromatic freshwater fish curries and moong dal.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Shorshe Pabda Jhal, Musur Dal, Shak Bhaja", dinner: "4 Roti, Dim Kosha, Salad" },
+          Tuesday: { lunch: "Bhaat, Katla Macher Kalia, Bhaja Moong Dal, Begun Bhaja", dinner: "4 Roti, Cholar Dal, Aloo Dum" }
+        }
+      },
+      {
+        id: 24,
+        name: "Kerala Home Meal Hub",
+        chef: "Laly Mathew",
+        location: "Salt Lake, Sector III",
+        rating: 4.92,
+        reviewsCount: 134,
+        cuisine: "Authentic Kerala Syrian & Malabar",
+        type: "Non-Veg",
+        fssai: "22823004005912",
+        pricePerMeal: 145,
+        tags: ["Matta Rice", "Kerala Fish Curry", "Thorans"],
+        description: "Coconut-infused Kerala home meals: red Matta rice, tart Kudampuli fish curry, Avial, and homemade pudding.",
+        image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Kerala Matta Rice, Alleppey Fish Curry, Cabbage Thoran, Moru Curry", dinner: "4 Malabar Parathas, Egg Roast, Salad" },
+          Tuesday: { lunch: "Matta Rice, Sambar, Avial, Beetroot Pachadi, Pappadam", dinner: "Appam (3 pcs), Vegetable Stew, Coconut Chutney" }
+        }
+      },
+      {
+        id: 25,
+        name: "Mother's Touch Tiffin",
+        chef: "Bina Paul",
+        location: "Jadavpur, Sulekha",
+        rating: 4.76,
+        reviewsCount: 82,
+        cuisine: "Light Bengali Everyday",
+        type: "Pure Veg",
+        fssai: "22825003001990",
+        pricePerMeal: 85,
+        tags: ["Student Budget", "Zero Soda", "Light Meals"],
+        description: "Designed specifically for university students staying in PGs: simple, low-spice, digestion-friendly daily meals.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Shobji Dal, Aloo Bhate, Potol Bhaja", dinner: "4 Roti, Chanar Dalna, Salad" },
+          Tuesday: { lunch: "Bhaat, Musur Dal, Bandhakopi Torkari, Begun Bhaja", dinner: "4 Roti, Soyabean Aloo Curry, Dal" }
+        }
+      },
+      {
+        id: 26,
+        name: "Tripti Bhojan",
+        chef: "Kavita Tiwari",
+        location: "Kankurgachi, Phoolbagan",
+        rating: 4.84,
+        reviewsCount: 99,
+        cuisine: "UP & Banarasi Homestyle",
+        type: "Pure Veg",
+        fssai: "22824009002281",
+        pricePerMeal: 100,
+        tags: ["Panchmel Dal", "Hing Jeera Aloo", "Desi Ghee"],
+        description: "Flavourful Banarasi vegetarian food cooked with fragrant heeng, mustard greens, homemade pickles, and soft rotis.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Hing Wale Aloo Tamatar, Urad Dal Tadka, 4 Phulkas, Rice", dinner: "Lauki Ki Sabzi, 4 Phulkas, Arhar Dal" },
+          Tuesday: { lunch: "Banarasi Dum Aloo, 4 Phulkas, Chana Dal, Steamed Rice", dinner: "Matar Paneer, 4 Tawa Roti, Salad" }
+        }
+      },
+      {
+        id: 27,
+        name: "Protein & Green Kitchen",
+        chef: "Arunav Dasgupta",
+        location: "Salt Lake, Sector II",
+        rating: 4.93,
+        reviewsCount: 161,
+        cuisine: "Clean Fitness Bowls",
+        type: "Pure Veg",
+        fssai: "22826001007812",
+        pricePerMeal: 155,
+        tags: ["Plant Protein", "Tofu & Paneer", "Cold Pressed"],
+        description: "Plant-based high protein tiffins: organic tofu, sprouts, low-fat paneer bowls, and cold-pressed dressing greens.",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Tofu Brown Rice Bowl with Sautéed Broccoli, Tahini Dressing", dinner: "Paneer Tikka Salad with Sprouted Moong, Multigrain Flatbread" },
+          Tuesday: { lunch: "Millet Khichdi with Edamame, Mixed Seeds, Low Fat Curd", dinner: "Grilled Tofu Steaks, Zucchini Ribbons, Roasted Almond Soup" }
+        }
+      },
+      {
+        id: 28,
+        name: "Chitpur Mughlai Henshel",
+        chef: "Parveen Begum",
+        location: "Park Circus, Beckbagan",
+        rating: 4.88,
+        reviewsCount: 147,
+        cuisine: "Kolkata Mughlai Homestyle",
+        type: "Non-Veg",
+        fssai: "22823001009121",
+        pricePerMeal: 140,
+        tags: ["Light Biryani", "Murgh Rezala", "Shami Kebab"],
+        description: "Family recipes of old Kolkata Mughlai curries prepared with light essence, low dalda, and homemade garam masala.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Homestyle Kolkata Chicken Biryani, Salad", dinner: "4 Roti, Chicken Chaap (Low Oil), Onion Salad" },
+          Tuesday: { lunch: "Steamed Rice, Murgh Rezala, Musur Dal", dinner: "4 Rumali Rotis, Chicken Tikka Kebab (3 pcs)" }
+        }
+      },
+      {
+        id: 29,
+        name: "Sindhi Rasoi",
+        chef: "Komal Motwani",
+        location: "New Alipore",
+        rating: 4.85,
+        reviewsCount: 79,
+        cuisine: "Authentic Sindhi Homestyle",
+        type: "Pure Veg",
+        fssai: "22824007003419",
+        pricePerMeal: 120,
+        tags: ["Sindhi Kadhi", "Dal Pakwan", "Sai Bhaji"],
+        description: "Authentic Sindhi food cooked with tamarind, lotus stem (bhee), gram flour kadhi, and nutritious sai bhaji.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Sindhi Kadhi, Steamed Basmati Rice, Aloo Tuk, Sweet Boondi", dinner: "4 Phulkas, Sai Bhaji, Papad" },
+          Tuesday: { lunch: "Bhee Aloo, Arhar Dal, 4 Phulkas, Rice", dinner: "Seyun Patata, 4 Phulkas" }
+        }
+      },
+      {
+        id: 30,
+        name: "Bhojohori Tiffin Express",
+        chef: "Soma Bhattacharya",
+        location: "Dum Dum Park",
+        rating: 4.80,
+        reviewsCount: 96,
+        cuisine: "Traditional Bengali",
+        type: "Non-Veg",
+        fssai: "22825007001438",
+        pricePerMeal: 125,
+        tags: ["Kosha Mangsho", "Chhanar Dalna", "Mustard Fish"],
+        description: "Everyday wholesome Bengali meals cooked fresh every morning with handpicked market vegetables and fresh fish.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhaat, Rui Macher Jhol, Musur Dal, Aloo Posto", dinner: "4 Roti, Dim Kosha, Salad" },
+          Tuesday: { lunch: "Bhaat, Katla Macher Kalia, Lau Shobji Dal, Bhaja", dinner: "4 Roti, Chhanar Dalna, Moong Dal" }
+        }
+      },
+      {
+        id: 31,
+        name: "Jain Rasoda By Harshita",
+        chef: "Harshita Chordiya",
+        location: "Lake Town, Block B",
+        rating: 4.89,
+        reviewsCount: 115,
+        cuisine: "Strict Jain Marwari",
+        type: "Jain Available",
+        fssai: "22824003006712",
+        pricePerMeal: 105,
+        tags: ["Strictly Jain", "Ghee Phulkas", "No Root Veggies"],
+        description: "Prepared under strictly monitored Jain conditions: filtered water, sundried spices, and no underground vegetables.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Lauki Chana Dal, 5 Ghee Phulkas, Steamed Rice, Chaas", dinner: "Moong Mogar Khichdi, Jain Kadhi, Papad" },
+          Tuesday: { lunch: "Gatte Ki Sabzi, 5 Phulkas, Steamed Rice, Boondi Raita", dinner: "Sev Tamatar (Jain), 5 Soft Rotis, Chaas" }
+        }
+      },
+      {
+        id: 32,
+        name: "Udupi Sri Krishna Tiffin",
+        chef: "Nagaraj Rao",
+        location: "Garia, Mahamayatala",
+        rating: 4.91,
+        reviewsCount: 140,
+        cuisine: "Karnataka Udupi Style",
+        type: "Pure Veg",
+        fssai: "22823005008234",
+        pricePerMeal: 95,
+        tags: ["Bisi Bele Bath", "Udupi Sambar", "Coconut Chutney"],
+        description: "Famous Udupi temple style meals: spiced jaggery sambar, steamed idlis, fresh rasam, and traditional coconut gravies.",
+        image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Rice, Udupi Sambar, Cabbage Poriyal, Saaru (Rasam), Curd", dinner: "4 Thatte Idlis, Coconut Chutney, Sambar" },
+          Tuesday: { lunch: "Bisi Bele Bath with Boondi, Potato Roast, Curd Rice", dinner: "Set Dosa (3 pcs), Vegetable Sagu, Chutney" }
+        }
+      },
+      {
+        id: 33,
+        name: "Kolkata Corporate Dabba",
+        chef: "Debasis Kundu",
+        location: "New Town, Action Area 2",
+        rating: 4.75,
+        reviewsCount: 104,
+        cuisine: "Multi-Cuisine Working Lunch",
+        type: "Non-Veg",
+        fssai: "22826004001928",
+        pricePerMeal: 120,
+        tags: ["Corporate Pack", "Prompt Delivery", "Less Oil"],
+        description: "Designed for IT corridor employees in New Town and Sector V with leakproof sealed packaging and quick delivery.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Rice, Chicken Curry, Dal Tadka, 2 Tawa Rotis, Salad", dinner: "4 Roti, Egg Bhurji Curry, Dal" },
+          Tuesday: { lunch: "Rice, Fish Kalia, Shobji Dal, 2 Rotis, Bhaja", dinner: "4 Roti, Paneer Butter Masala, Salad" }
+        }
+      },
+      {
+        id: 34,
+        name: "Chatori Dadi's Kitchen",
+        chef: "Urmila Jha",
+        location: "Salt Lake, Sector IV",
+        rating: 4.87,
+        reviewsCount: 128,
+        cuisine: "Mithila & North Bihar",
+        type: "Pure Veg",
+        fssai: "22822008003189",
+        pricePerMeal: 95,
+        tags: ["Mithila Style", "Ol Ki Sabzi", "Sattu Paratha"],
+        description: "Ancient Mithila traditional recipes cooked by 68-year-old grandmother Urmila using hand-pounded spices and ghee.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Bhat, Rahar Dal, Aloo Chokha, Tilkor Tarua", dinner: "2 Sattu Paratha, Baingan Chokha, Curd" },
+          Tuesday: { lunch: "Bhat, Kadhi Bari, Aloo Bhujia, Papad", dinner: "4 Phulkas, Parwal Ki Bhujia, Dal" }
+        }
+      },
+      {
+        id: 35,
+        name: "Chettinad Curry House",
+        chef: "Meenakshi Alagappan",
+        location: "Lansdowne, South Kolkata",
+        rating: 4.90,
+        reviewsCount: 152,
+        cuisine: "Chettinad & Madurai Homestyle",
+        type: "Non-Veg",
+        fssai: "22824005004112",
+        pricePerMeal: 150,
+        tags: ["Pepper Chicken", "Chettinad Spices", "Kozhambu"],
+        description: "Hand-roasted stone ground Chettinad spices, kalpasi flowers, pepper chicken curries, and aromatic rasams.",
+        image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Steamed Rice, Chettinad Chicken Kozhambu, Cabbage Kootu, Pepper Rasam", dinner: "3 Veechu Parathas, Egg Salna, Onion Raita" },
+          Tuesday: { lunch: "Steamed Rice, Meen Kozhambu (Fish Gravy), Beans Poriyal", dinner: "3 Idlis, 1 Medu Vada, Chettinad Sambar" }
+        }
+      },
+      {
+        id: 36,
+        name: "Ahare Bahar Tiffin",
+        chef: "Pallabi Mukherjee",
+        location: "Santoshpur, Jadavpur",
+        rating: 4.82,
+        reviewsCount: 110,
+        cuisine: "Traditional Zamindari Bengali",
+        type: "Non-Veg",
+        fssai: "22823006009845",
+        pricePerMeal: 135,
+        tags: ["Doi Katla", "Bhetki Paturi", "Posto"],
+        description: "Centuries-old Kolkata Zamindari heritage recipes: gentle sweet-spiced curries cooked in traditional brass utensils.",
+        image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Gobindobhog Rice, Doi Katla, Shukto, Biulir Dal", dinner: "4 Roti, Dim Kosha, Onion Salad" },
+          Tuesday: { lunch: "Bhaat, Bhetki Paturi, Musur Dal, Aloo Bhaja", dinner: "4 Roti, Chanar Dalna, Moong Dal" }
+        }
+      },
+      {
+        id: 37,
+        name: "Pali Hill Bombay Dabba",
+        chef: "Siddhesh Kadam",
+        location: "Rajarhat, City Centre 2",
+        rating: 4.83,
+        reviewsCount: 97,
+        cuisine: "Maharashtrian Homestyle",
+        type: "Pure Veg",
+        fssai: "22825002005619",
+        pricePerMeal: 110,
+        tags: ["Pithla Bhakri", "Varan Bhaat", "Comfort Food"],
+        description: "Homestyle Maharashtrian comfort meals with goda masala, authentic varan bhaat with pure ghee, and zunka pithla.",
+        image: "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Varan Bhaat with Ghee, Batata Sukhi Bhaji, 3 Chapati", dinner: "Pithla, 2 Jowar Bhakri, Thecha, Onion" },
+          Tuesday: { lunch: "Matki Usal, 4 Chapati, Steamed Rice, Amti Dal", dinner: "Shev Bhaji, 4 Phulkas, Koshimbir" }
+        }
+      },
+      {
+        id: 38,
+        name: "Green Apple Diet Tiffin",
+        chef: "Pooja Chhabra",
+        location: "Salt Lake, Sector V (College More)",
+        rating: 4.96,
+        reviewsCount: 204,
+        cuisine: "Gluten-Free & Keto Nutrition",
+        type: "Pure Veg",
+        fssai: "22824001007890",
+        pricePerMeal: 165,
+        tags: ["Gluten Free", "Keto Friendly", "Almond Flour"],
+        description: "Specialized clinical dietary meals: gluten-free grains, low GI carbs, keto salads, and diabetic-safe menus.",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60",
+        menu: {
+          Monday: { lunch: "Cauliflower Rice Bowl, Grilled Cottage Cheese, Sautéed Asparagus", dinner: "Zucchini Noodles (Zoodles) in Pesto, Pine Nuts" },
+          Tuesday: { lunch: "Almond Flour Rotis (3), Spinach Paneer Bhurji, Cucumber Raita", dinner: "Avocado & Sprouted Moong Salad, Clear Soup" }
+        }
+      }
+    ];
+
+    let currentFilter = 'All';
+    let currentSearch = '';
+    let selectedCook = null;
+    let modalDuration = 'monthly';
+    let modalMealType = 'both';
+
+    let subscriptions = [
+      {
+        id: "SUB-8091",
+        cookName: "Aarti's Kitchen",
+        plan: "Monthly Plan",
+        mealType: "Both Meals",
+        diet: "Pure Veg",
+        status: "Active",
+        nextDelivery: "Today, 1:15 PM (Lunch)",
+        skippedDays: 1,
+        totalAmount: 5500
+      }
+    ];
+
+    let cookRequests = [
+      { id: 101, customer: "Rahul Sen", locality: "Sector V", plan: "Monthly Lunch", start: "Tomorrow", amount: "₹2,800" },
+      { id: 102, customer: "Pooja Roy", locality: "Salt Lake Block CF", plan: "Weekly Both", start: "Oct 2", amount: "₹1,540" }
+    ];
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+      }, 3500);
+    }
+
+    function switchRole(role) {
+      document.getElementById('viewCustomer').classList.add('hidden');
+      document.getElementById('viewProvider').classList.add('hidden');
+      document.getElementById('viewAdmin').classList.add('hidden');
+
+      ['btnRoleCustomer', 'btnRoleProvider', 'btnRoleAdmin'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.classList.remove('bg-white', 'text-stone-900', 'shadow-sm');
+        btn.classList.add('text-stone-600');
+      });
+
+      if (role === 'customer') {
+        document.getElementById('viewCustomer').classList.remove('hidden');
+        document.getElementById('btnRoleCustomer').classList.add('bg-white', 'text-stone-900', 'shadow-sm');
+      } else if (role === 'provider') {
+        document.getElementById('viewProvider').classList.remove('hidden');
+        document.getElementById('btnRoleProvider').classList.add('bg-white', 'text-stone-900', 'shadow-sm');
+        renderProviderRequests();
+      } else {
+        document.getElementById('viewAdmin').classList.remove('hidden');
+        document.getElementById('btnRoleAdmin').classList.add('bg-white', 'text-stone-900', 'shadow-sm');
+      }
+      lucide.createIcons();
+    }
+
+    function switchCustomerTab(tab) {
+      if (tab === 'explore') {
+        document.getElementById('customerTabExplore').classList.remove('hidden');
+        document.getElementById('customerTabSubscriptions').classList.add('hidden');
+        document.getElementById('tabExplore').className = 'pb-3 font-semibold text-sm transition tab-active';
+        document.getElementById('tabSubscriptions').className = 'pb-3 font-semibold text-sm transition tab-inactive flex items-center gap-1.5';
+      } else {
+        document.getElementById('customerTabExplore').classList.add('hidden');
+        document.getElementById('customerTabSubscriptions').classList.remove('hidden');
+        document.getElementById('tabExplore').className = 'pb-3 font-semibold text-sm transition tab-inactive';
+        document.getElementById('tabSubscriptions').className = 'pb-3 font-semibold text-sm transition tab-active flex items-center gap-1.5';
+        renderSubscriptions();
+      }
+      lucide.createIcons();
+    }
+
+    function renderCooks() {
+      const container = document.getElementById('cookCardsGrid');
+      const filtered = cooks.filter(c => {
+        const matchesFilter = currentFilter === 'All' || c.type.includes(currentFilter);
+        const matchesSearch = c.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                              c.cuisine.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                              c.location.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                              c.description.toLowerCase().includes(currentSearch.toLowerCase());
+        return matchesFilter && matchesSearch;
+      });
+
+      document.getElementById('totalKitchensCount').innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-12 text-center text-stone-400 font-medium">No tiffin providers found matching your search.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => `
+        <div class="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div>
+            <div class="relative h-48 w-full bg-stone-100 overflow-hidden">
+              <img src="${c.image}" alt="${c.name}" class="w-full h-full object-cover">
+              <div class="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-bold text-stone-800 flex items-center gap-1 shadow-sm">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                <span>${c.rating}</span>
+                <span class="text-stone-400 font-normal">(${c.reviewsCount})</span>
+              </div>
+              <div class="absolute top-3 right-3 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> FSSAI
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="font-bold text-lg text-stone-900">${c.name}</h3>
+                <span class="text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">${c.type}</span>
+              </div>
+              <p class="text-xs text-stone-500 flex items-center gap-1 mb-3">
+                <i data-lucide="chef-hat" class="w-3.5 h-3.5 text-amber-600"></i> By ${c.chef} • <i data-lucide="map-pin" class="w-3 h-3 ml-1"></i> ${c.location}
+              </p>
+              <p class="text-xs text-stone-600 mb-4 leading-relaxed">${c.description}</p>
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                ${c.tags.map(t => `<span class="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-lg">${t}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="p-5 pt-0">
+            <div class="pt-3 border-t border-stone-100 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-stone-400 uppercase tracking-wider block font-semibold">Starts from</span>
+                <span class="text-lg font-black text-stone-900">₹${c.pricePerMeal}</span>
+                <span class="text-xs text-stone-500"> / meal</span>
+              </div>
+              <button onclick="openModal(${c.id})" class="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                View Menu & Subscribe <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === filter) {
+          btn.className = "filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-amber-600 text-white shadow-sm";
+        } else {
+          btn.className = "filter-btn px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap bg-white border border-stone-200 text-stone-700 hover:bg-stone-50";
+        }
+      });
+      renderCooks();
+    }
+
+    function handleSearch(val) {
+      currentSearch = val.trim();
+      renderCooks();
+    }
+
+    function renderSubscriptions() {
+      const container = document.getElementById('subscriptionsContainer');
+      document.getElementById('subCountBadge').innerText = subscriptions.length;
+      if (subscriptions.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-stone-400 text-sm">No active meal subscriptions found.</div>`;
+        return;
+      }
+      container.innerHTML = subscriptions.map(sub => `
+        <div class="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-stone-100 pb-4 mb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-lg text-stone-900">${sub.cookName}</h3>
+                <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">${sub.status}</span>
+              </div>
+              <p class="text-xs text-stone-500 mt-1">${sub.plan} • ${sub.mealType} • ${sub.diet}</p>
+            </div>
+            <div>
+              <span class="text-xs text-stone-400 block sm:text-right">Next Delivery</span>
+              <span class="text-sm font-bold text-amber-700 flex items-center gap-1 sm:justify-end">
+                <i data-lucide="clock" class="w-4 h-4"></i> ${sub.nextDelivery}
+              </span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs text-stone-600">
+              Skipped Meals Credited: <strong class="text-stone-900">${sub.skippedDays} meal(s)</strong>
+            </div>
+            <button onclick="skipMeal('${sub.id}')" class="text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition border border-rose-200">
+              Skip Today's Meal (Credit Wallet)
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function skipMeal(id) {
+      subscriptions = subscriptions.map(s => s.id === id ? { ...s, skippedDays: s.skippedDays + 1 } : s);
+      showToast("Today's meal paused! Wallet credited with ₹110.");
+      renderSubscriptions();
+    }
+
+    function openModal(cookId) {
+      selectedCook = cooks.find(c => c.id === cookId);
+      document.getElementById('modalCookName').innerText = selectedCook.name;
+      document.getElementById('modalCookMeta').innerText = `${selectedCook.cuisine} • FSSAI #${selectedCook.fssai}`;
+
+      const schedule = document.getElementById('modalMenuSchedule');
+      schedule.innerHTML = Object.entries(selectedCook.menu).map(([day, meals]) => `
+        <div class="bg-stone-50 p-3 rounded-2xl border border-stone-100 text-xs">
+          <strong class="text-amber-800 block mb-0.5">${day}</strong>
+          <div><strong>Lunch:</strong> ${meals.lunch}</div>
+          <div class="mt-0.5"><strong>Dinner:</strong> ${meals.dinner}</div>
+        </div>
+      `).join('');
+
+      updateModalPrice();
+      document.getElementById('cookModal').classList.remove('hidden');
+      document.getElementById('cookModal').classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      document.getElementById('cookModal').classList.add('hidden');
+      document.getElementById('cookModal').classList.remove('flex');
+    }
+
+    function setModalDuration(dur) {
+      modalDuration = dur;
+      ['daily', 'weekly', 'monthly'].forEach(d => {
+        const btn = document.getElementById(`btnPlan${d.charAt(0).toUpperCase() + d.slice(1)}`);
+        if (d === dur) {
+          btn.className = "p-3 rounded-2xl border text-center border-amber-600 bg-amber-50 text-amber-900 font-bold";
+        } else {
+          btn.className = "p-3 rounded-2xl border text-center border-stone-200 text-stone-700";
+        }
+      });
+      updateModalPrice();
+    }
+
+    function setModalMealType(type) {
+      modalMealType = type;
+      ['lunch', 'dinner', 'both'].forEach(t => {
+        const btn = document.getElementById(`btnMeal${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === type) {
+          btn.className = "p-2.5 rounded-xl border border-stone-900 bg-stone-900 text-white text-xs text-center font-semibold";
+        } else {
+          btn.className = "p-2.5 rounded-xl border border-stone-200 text-stone-700 text-xs text-center font-medium";
+        }
+      });
+      updateModalPrice();
+    }
+
+    function updateModalPrice() {
+      if (!selectedCook) return;
+      const mealsPerDay = modalMealType === 'both' ? 2 : 1;
+      const days = modalDuration === 'daily' ? 1 : modalDuration === 'weekly' ? 7 : 28;
+      const disc = modalDuration === 'monthly' ? 0.9 : modalDuration === 'weekly' ? 0.95 : 1;
+      const total = Math.round(selectedCook.pricePerMeal * mealsPerDay * days * disc);
+      document.getElementById('modalTotalPrice').innerText = `₹${total}`;
+    }
+
+    function confirmSubscription() {
+      const mealsPerDay = modalMealType === 'both' ? 2 : 1;
+      const days = modalDuration === 'daily' ? 1 : modalDuration === 'weekly' ? 7 : 28;
+      const disc = modalDuration === 'monthly' ? 0.9 : modalDuration === 'weekly' ? 0.95 : 1;
+      const total = Math.round(selectedCook.pricePerMeal * mealsPerDay * days * disc);
+
+      subscriptions.push({
+        id: `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
+        cookName: selectedCook.name,
+        plan: `${modalDuration.toUpperCase()} (${days} Days)`,
+        mealType: modalMealType === 'both' ? 'Both Meals' : modalMealType === 'lunch' ? 'Lunch Only' : 'Dinner Only',
+        diet: selectedCook.type,
+        status: "Active",
+        nextDelivery: "Tomorrow, 1:00 PM (Lunch)",
+        skippedDays: 0,
+        totalAmount: total
+      });
+
+      closeModal();
+      showToast(`Subscribed successfully to ${selectedCook.name}!`);
+      switchCustomerTab('subscriptions');
+    }
+
+    function renderProviderRequests() {
+      const container = document.getElementById('cookRequestsList');
+      container.innerHTML = cookRequests.map(r => `
+        <div id="req-${r.id}" class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-stone-100 bg-stone-50 gap-3">
+          <div>
+            <h4 class="font-bold text-sm text-stone-900">${r.customer} (${r.locality})</h4>
+            <p class="text-xs text-stone-500 mt-0.5">${r.plan} • Starts: ${r.start} • Total: ${r.amount}</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="approveRequest(${r.id}, '${r.customer}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">Accept Order</button>
+            <button onclick="declineRequest(${r.id})" class="bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-semibold px-4 py-2 rounded-xl transition">Decline</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function approveRequest(id, name) {
+      document.getElementById(`req-${id}`).remove();
+      showToast(`Subscription approved for ${name}!`);
+    }
+
+    function declineRequest(id) {
+      document.getElementById(`req-${id}`).remove();
+    }
+
+    // Initialize Page
+    renderCooks();
+    renderSubscriptions();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
